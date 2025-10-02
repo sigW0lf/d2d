@@ -4,7 +4,7 @@ use std::default::Default;
 use std::fmt;
 use std::ops::{Add, Sub};
 
-use chrono::NaiveDate;
+use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 use crate::command::GoalKind;
@@ -43,8 +43,8 @@ impl FloatData {
 
 impl fmt::Display for FloatData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let characteristic = self.value / (10 * self.precision as u32);
-        let mantissa = self.value % (10 * self.precision as u32);
+        let characteristic = self.value / (self.precision as u32);
+        let mantissa = self.value % (self.precision as u32) * (100 / (self.precision as u32));
         let s = if characteristic == 0 {
             format!(".{}", mantissa)
         } else if mantissa == 0 {
@@ -126,6 +126,14 @@ impl Habit for Float {
     }
     fn insert_entry(&mut self, date: NaiveDate, val: Self::HabitType) {
         *self.stats.entry(date).or_insert(val) = val;
+    }
+    fn insert_today(&mut self) {
+        let today = Local::now().naive_local().date();
+        if let Some(_v) = self.stats.get(&today) { }
+        else {
+            let val = FloatData { value: 0, precision: 10 }; 
+            *self.stats.entry(today).or_insert(val) = val;
+        }
     }
     fn reached_goal(&self, date: NaiveDate) -> bool {
         if let Some(val) = self.stats.get(&date) {

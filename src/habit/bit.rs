@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::default::Default;
 
-use chrono::NaiveDate;
+use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 use crate::command::GoalKind;
@@ -79,27 +79,39 @@ impl Habit for Bit {
     fn insert_entry(&mut self, date: NaiveDate, val: Self::HabitType) {
         *self.stats.entry(date).or_insert(val) = val;
     }
+    fn insert_today(&mut self) {
+        let today = Local::now().naive_local().date();
+        if let Some(_v) = self.stats.get(&today) { }
+        else {
+            let val = CustomBool(false); 
+            *self.stats.entry(today).or_insert(val) = val;
+        }
+    }
     fn reached_goal(&self, date: NaiveDate) -> bool {
         if let Some(val) = self.stats.get(&date) {
-            if val.0 >= self.goal.0 {
+            if val.0 == self.goal.0 {
+                return true;
+            }
+        } else {
+            if self.goal.0 == false {
                 return true;
             }
         }
         return false;
     }
     fn remaining(&self, date: NaiveDate) -> u32 {
-        if let Some(val) = self.stats.get(&date) {
-            if val.0 {
-                return 0;
-            } else {
-                return 1;
-            }
+        if self.reached_goal(date) {
+            return 0;
         } else {
             return 1;
         }
     }
     fn goal(&self) -> u32 {
-        return 1;
+        if self.goal.0 {
+            return 1;
+        } else {
+            return 0;
+        }
     }
     fn modify(&mut self, date: NaiveDate, event: TrackEvent) {
         if let Some(val) = self.stats.get_mut(&date) {

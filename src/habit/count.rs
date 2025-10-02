@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::default::Default;
 
-use chrono::NaiveDate;
+use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 use crate::command::GoalKind;
@@ -55,16 +55,34 @@ impl Habit for Count {
     fn insert_entry(&mut self, date: NaiveDate, val: Self::HabitType) {
         *self.stats.entry(date).or_insert(val) = val;
     }
+    fn insert_today(&mut self) {
+        let today = Local::now().naive_local().date();
+        if let Some(_v) = self.stats.get(&today) { }
+        else {
+            let val = 0 as u32; 
+            *self.stats.entry(today).or_insert(val) = val;
+        }
+    }
     fn reached_goal(&self, date: NaiveDate) -> bool {
         if let Some(val) = self.stats.get(&date) {
-            if val >= &self.goal {
+            if &self.goal == &(0 as u32) {
+                if ! (val > &self.goal) {
+                    return true;
+                }
+            } else {
+                if val >= &self.goal {
+                    return true;
+                }
+            }
+        } else {
+            if &self.goal == &(0 as u32) {
                 return true;
             }
         }
         return false;
     }
     fn remaining(&self, date: NaiveDate) -> u32 {
-        if self.reached_goal(date) {
+        if self.reached_goal(date) || &self.goal == &(0 as u32) {
             return 0;
         } else {
             if let Some(val) = self.stats.get(&date) {

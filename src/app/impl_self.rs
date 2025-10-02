@@ -179,6 +179,9 @@ impl App {
         let mut regular = read_from_file(regular_f);
         let auto = read_from_file(auto_f);
         regular.extend(auto);
+        for h in regular.iter_mut() {
+            h.insert_today();
+        }
         return App {
             habits: regular,
             ..Default::default()
@@ -242,6 +245,9 @@ impl App {
                         _ => {
                             self.add_habit(Box::new(Count::new(name, 0, auto)));
                         }
+                    }
+                    for h in self.habits.iter_mut() {
+                        h.insert_today();
                     }
                 }
                 Command::Delete(name) => {

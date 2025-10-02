@@ -15,6 +15,7 @@ pub trait Habit {
     fn get_by_date(&self, date: NaiveDate) -> Option<&Self::HabitType>;
     fn goal(&self) -> u32;
     fn insert_entry(&mut self, date: NaiveDate, val: Self::HabitType);
+    fn insert_today(&mut self);
     fn modify(&mut self, date: NaiveDate, event: TrackEvent);
     fn name(&self) -> String;
     fn reached_goal(&self, date: NaiveDate) -> bool;
@@ -45,6 +46,7 @@ pub trait HabitWrapper: erased_serde::Serialize {
     fn inner_data_mut_ref(&mut self) -> &mut InnerData;
 
     fn is_auto(&self) -> bool;
+    fn insert_today(&mut self);
 }
 
 macro_rules! auto_habit_impl {
@@ -89,6 +91,9 @@ macro_rules! auto_habit_impl {
             }
             fn is_auto(&self) -> bool {
                 Habit::is_auto(self)
+            }
+            fn insert_today(&mut self) {
+                Habit::insert_today(self)
             }
         }
     };
