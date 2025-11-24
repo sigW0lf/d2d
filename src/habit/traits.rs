@@ -14,6 +14,7 @@ pub trait Habit {
 
     fn get_by_date(&self, date: NaiveDate) -> Option<&Self::HabitType>;
     fn goal(&self) -> u32;
+    fn val(&self, date: NaiveDate) -> u32;
     fn insert_entry(&mut self, date: NaiveDate, val: Self::HabitType);
     fn insert_today(&mut self);
     fn modify(&mut self, date: NaiveDate, event: TrackEvent);

@@ -1,3 +1,5 @@
+use std::cmp::max;
+
 use cursive::direction::Direction;
 use cursive::event::{Event, EventResult, Key};
 use cursive::theme::{ColorStyle, Effect, Style};
@@ -9,7 +11,7 @@ use chrono::{Local, NaiveDate};
 
 use crate::habit::{Bit, Count, Float, Habit, TrackEvent, ViewMode};
 use crate::theme::cursor_bg;
-use crate::utils::VIEW_WIDTH;
+use crate::utils::{VIEW_HEIGHT, VIEW_WIDTH};
 
 use crate::CONFIGURATION;
 
@@ -39,6 +41,7 @@ where
         let is_today = now == Local::now().naive_local().date();
         let year = now.year();
         let month = now.month();
+        let day = now.day();
 
         let goal_reached_style = Style::from(CONFIGURATION.reached_color());
         let future_style = Style::from(CONFIGURATION.inactive_color());
@@ -69,11 +72,68 @@ where
         );
 
         let draw_week = |printer: &Printer| {
-            let days = (1..31)
+            let ts = ColorStyle::front(CONFIGURATION.todo_color());
+            let mut td_style = Style::none();
+            td_style = td_style.combine(Style::from(ts));
+
+            let days = (1..32)
                 .map(|i| NaiveDate::from_ymd_opt(year, month, i))
                 .flatten() // dates 28-31 may not exist, ignore them if they don't
                 .collect::<Vec<_>>();
-            for (week, line_nr) in days.chunks(7).zip(2..) {
+
+            let mut dstart = day as i32 - VIEW_WIDTH as i32 +4;
+            if dstart < 0{
+                dstart = 0;
+            }
+            let start = dstart as usize;
+            
+            let mut m_val = 0;
+            for day in days.iter(){
+                let value = self.val(*day);
+                if value > m_val{
+                    m_val = value;
+                }
+            }
+            let mut val_m = m_val;
+            for day in days.iter(){
+                let value = self.val(*day);
+                if value < val_m{
+                    val_m = value;
+                }
+            }
+            let max_val = m_val as f32 + 1.0;
+            let min_val = val_m as f32;
+
+            for i in (2..(VIEW_WIDTH-2)) {
+                let day = &(days[i+start-2]);
+                let value = self.val(*day);
+                let goal = self.reached_goal(*day);
+                for j in (1..(VIEW_HEIGHT -1)) {
+                    let j_val = ((max_val-min_val)/(VIEW_HEIGHT-2) as f32)*(VIEW_HEIGHT-j-2) as f32 + min_val + 0.5;
+                    if value >= j_val as u32 {
+                        if goal {
+                            printer.with_style(goal_reached_style, |p| {
+                                p.print((i,j), &"|".repeat(1));
+                            });
+                        }else{
+                            printer.with_style(td_style, |p| {
+                                p.print((i,j), &"|".repeat(1));
+                            });
+                        }
+                    }else{
+                        printer.with_style(future_style, |p| {
+                            p.print((i,j), &" ".repeat(1));
+                        });
+                    }
+                }
+            }
+            for j in (2..(VIEW_HEIGHT-1)) {
+                let value = ((max_val-min_val)/(VIEW_HEIGHT-2) as f32)*(VIEW_HEIGHT-j-2) as f32 + min_val + 0.5;
+                printer.with_style(future_style, |p| {
+                    p.print((0, j), &format!("{:2.0}", (value) as u32));
+                });
+            }
+            /*for (week, line_nr) in days.chunks(7).zip(2..) {
                 let weekly_goal = self.goal() * week.len() as u32;
                 let is_this_week = week.contains(&Local::now().naive_local().date());
                 let remaining = week.iter().map(|&i| self.remaining(i)).sum::<u32>();
@@ -105,7 +165,7 @@ where
                         p.print((0, line_nr), &format!("{:2.0}% ", percentage));
                     },
                 );
-            }
+            }*/
         };
 
         let draw_day = |printer: &Printer| {

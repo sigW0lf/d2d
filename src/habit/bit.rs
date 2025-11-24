@@ -113,6 +113,14 @@ impl Habit for Bit {
             return 0;
         }
     }
+    fn val(&self, date: NaiveDate) -> u32 {
+        if let Some(val) = self.stats.get(&date) {
+            if val.0 {
+                return 1;
+            }
+        }
+        return 0;
+    }
     fn modify(&mut self, date: NaiveDate, event: TrackEvent) {
         if let Some(val) = self.stats.get_mut(&date) {
             match event {

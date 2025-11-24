@@ -131,7 +131,7 @@ impl Habit for Float {
         let today = Local::now().naive_local().date();
         if let Some(_v) = self.stats.get(&today) { }
         else {
-            let val = FloatData { value: 0, precision: 10 }; 
+            let val = FloatData { value: 0, precision: self.precision }; 
             *self.stats.entry(today).or_insert(val) = val;
         }
     }
@@ -156,6 +156,12 @@ impl Habit for Float {
     }
     fn goal(&self) -> u32 {
         return self.goal.value;
+    }
+    fn val(&self, date: NaiveDate) -> u32 {
+        if let Some(val) = self.stats.get(&date){
+            return val.value;
+        }
+        return 0;
     }
     fn modify(&mut self, date: NaiveDate, event: TrackEvent) {
         if let Some(val) = self.stats.get_mut(&date) {

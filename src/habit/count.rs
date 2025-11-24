@@ -95,6 +95,12 @@ impl Habit for Count {
     fn goal(&self) -> u32 {
         return self.goal;
     }
+    fn val(&self, date: NaiveDate) -> u32 {
+        if let Some(val) = self.stats.get(&date) {
+            return *val;
+        }
+        return 0;
+    }
     fn modify(&mut self, date: NaiveDate, event: TrackEvent) {
         if let Some(val) = self.stats.get_mut(&date) {
             match event {
